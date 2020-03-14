@@ -37,51 +37,27 @@ extern int parser_domain(const char *domain, struct hostent* host){
 }
 
 extern int accept_client(const struct sock_info* info, int listen_count,
-    void (*handle)(struct sock_info),
+    void (*handler)(struct sock_info),
     void (*error)()){
     if(info == NULL)
         return -1;
     if(listen(info->sockfd, listen_count) < 0)
         return -1;
 
-    int sockfds[MAX_FD] ={-1};
     // 最大的fd
-    int maxfd = info->sockfd;
     int sockfd = -1;
     struct sock_info c_info; // 连接信息
     struct sockaddr_in c_addr; // 连接信息
     socklen_t socklen = sizeof(c_addr);
-
-    fd_set read;
-    // 将fd集清空
-    FD_ZERO(&read);
-    // 填入fd
-    FD_SET(maxfd, &read);
-
-    int rfd = -1;
-
-    while ((rfd = select(maxfd + 1, &read, NULL, NULL, NULL)) != -1)
+    while (1)
     {   
-        if(rfd == 0)
-            continue;
-        // 是否包含lisentfd
-        if(FD_ISSET(info->sockfd, &read)){
-            if((sockfd=accept(info->sockfd, (struct sockaddr *)&c_addr, &socklen)) < 0){
-                error();
-            }
-            if(sockfd > maxfd)
-                maxfd = sockfd;
-            for(int i = 0; i < MAX_FD; i++){
-                if(sockfds[i] == -1){
-                    sockfds[sockfd];
-                    break; 
-                }
-            }
-            convert_ntos(&c_addr, &c_info);
-            c_info.sockfd  = sockfd;
-            handle(c_info);
-            // 通知程序处理
+        if((sockfd=accept(info->sockfd, (struct sockaddr *)&c_addr, &socklen)) < 0){
+            error();
         }
+        convert_ntos(&c_addr, &c_info);
+        c_info.sockfd  = sockfd;
+        // 通知程序处理
+        handler(c_info);
     }
     
 }
@@ -129,11 +105,11 @@ extern int sock5_licenes(const struct sock_info* sock, struct sock_info* connect
     // 发送给客户端
     if(send(sockfd, sbuf, sizeof(server), 0) < 0)
         return -1;
-    bzero(&buffer, BUFF_LEN);
-    if(recv(sockfd, buffer, BUFF_LEN, 0) < 0)
+    char request_buffer[270];
+    if(recv(sockfd, request_buffer, sizeof(request_buffer), 0) < 0)
         return -1;
     // 客户端请求信息
-    struct client_request_protocol* request = (struct client_request_protocol*)buffer;
+    struct client_request_protocol* request = (struct client_request_protocol*)request_buffer;
     if(request->ver != SOCK5)
         return -1;
     struct sockaddr_in addr;
@@ -155,6 +131,7 @@ extern int sock5_licenes(const struct sock_info* sock, struct sock_info* connect
         memcpy(&addr.sin_port, &domain.port, 2);
     }else if(request->atyp == ATYP3){
         // ipv6
+        return -5;
     }else{
         return -3;
     }
@@ -174,11 +151,13 @@ extern int get_sock_domain(const struct client_request_protocol* request,
         return -1;
     // 获取域名长度
     unsigned int domain_len = ((unsigned int)*request->addr) +  1;
+    int p_domain_len = strlen(domain->domain);
     for(int i= 1; i < domain_len; i++){
         domain->domain[i-1] = *(request->addr+i);
     }
-    // strncpy(&domain->port, (&request->addr)+domain_len, 2);
+    // 获取端口号 网络字节序
     memcpy(domain->port, &request->addr+domain_len, 2);
+    // 解析域名
     if(parser_domain(domain->domain, &domain->net_host) != 0){
         return -2;
     }
