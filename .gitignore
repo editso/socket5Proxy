@@ -3,5 +3,6 @@
 *.out
 *.o
 proxy1*
-
+backup
+bin
 
