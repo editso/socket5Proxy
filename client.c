@@ -132,7 +132,7 @@ void handler(struct sock_info info){
     sock_arg arg;
     memcpy(&arg.sock,  (struct sock_info*)memcpy(malloc(sizeof(info)), &info, sizeof(info)), sizeof(struct sock_info));
     memcpy(&arg.addr, &proxy_addr, sizeof(struct conn_addr));
-    if(pthread_create(&pid, NULL, start_proxy, (void *)&arg) != 0){
+    if(pthread_create(&pid, NULL, start_handle, (void *)&arg) != 0){
         perror("create thread error");
     }
 }

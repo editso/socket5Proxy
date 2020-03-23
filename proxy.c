@@ -309,14 +309,14 @@ extern int forward_data(struct sock_info* local, struct sock_info* remote){
         // printf("maxfd:%d\n", max_fd);
         if(fds == 0)
             continue;
-        if(FD_ISSET(local_fd, &read_fd_set) == local_fd){
+        if(FD_ISSET(local_fd, &read_fd_set)){
             printf("转发数据\n");
             if (__FORWARD_DATA__(remote_fd, local_fd, buff, FORWARD_BUFF_LEN) < 0)
             {
                 printf("数据转发失败\n");
                 break;
             }
-        }else if(FD_ISSET(remote_fd, &read_fd_set) == remote_fd){
+        }else if(FD_ISSET(remote_fd, &read_fd_set)){
             printf("转发数据\n");
             if (__FORWARD_DATA__(local_fd, remote_fd, buff, FORWARD_BUFF_LEN) < 0)
             {
