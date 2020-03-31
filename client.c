@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <proxy.h>
+#include "proxy.h"
 #include <unistd.h>
 #include <sys/signal.h>
 #include <sys/epoll.h>
@@ -49,7 +49,8 @@ int main(int argc, char **argv){
         perror("信号注册失败");
         exit(0);
     }
-    if((listen_fd = create_tcp(argv[1], 100, &local)) < 0){
+    int opt = 1;
+    if((listen_fd = create_reuse_tcp(argv[1], (void*)&opt,  sizeof(opt), 100, &local)) < 0){
         perror("创建失败");
         exit(0);
     }

@@ -107,7 +107,7 @@ extern int proxy_connect(const struct sockaddr_in* addr){
 /**
  * 创建一个socket 
 */
-extern int create_socket(const struct sockaddr_in* addr, int listen_num){
+extern int create_socket(const struct sockaddr_in* addr,int listen_num){
     if(addr == NULL)
         return PROXY_NULL;
     int fd = -1;
@@ -153,15 +153,12 @@ extern int proxy_dns(char *domain, struct proxy_dns_info* dns){
  * 转发数据程序
 */
 extern int forward_data(int dest_fd, int src_fd, char *buff, int size){
-    // bzero(buff, sizeof(buff)); // 清空缓冲区
     int data_len = 0;
     memset(buff, 0, size);
     int done;
-
     while (1)
     {
         data_len = recv(dest_fd, buff, size, 0);
-        printf("len :%d\n", data_len);
         if(data_len == -1){
             if(errno == EAGAIN)
                 break;
@@ -203,7 +200,6 @@ extern  int proxy_forward_data(int s_fd, int t_fd){
         FD_SET(s_fd, &read_set);
         FD_SET(t_fd, &read_set);
         ret = select(max_fd + 1, &read_set, NULL, NULL, NULL);
-        printf("fd1:%d, fd2: %d, ret: %d\n", s_fd, t_fd,ret);
         if(ret  == -1)
             break;
         if(ret == 0)
@@ -239,7 +235,6 @@ extern int signal_register(int* sigs,  int size, void (*callback)()){
     return 0;
 }
 
-
 /**
  * 创建tcp
 */
@@ -269,4 +264,31 @@ extern int connect_proxy(const struct proxy_info* proxy){
     if(proxy_client_licenes(conn_fd) < 0)
         return -1;
     return conn_fd;
+}
+
+extern int reuse_port(const int *fd, const void* val, socklen_t* len){
+    return setsockopt(*fd, SOL_SOCKET, SO_REUSEADDR, val, *len);
+}
+
+/**
+ * 创建一个可复用端口的tcp连接
+*/
+extern  int create_reuse_tcp(char *port, void *optval, socklen_t optlen, int listen_num, struct proxy_info* p_info)
+{
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port  = htons(atol(port));
+    int fd = -1;
+    if((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        return -1;
+    if(reuse_port(&fd, optval, &optlen) < 0)
+        return -1;
+    if(bind(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr)) < 0)
+        return -1;
+    if(listen(fd,  listen_num) < 0)
+        return -1;
+    proxy_ntos(&addr, p_info);
+    p_info->fd = fd;
+    return fd;
 }

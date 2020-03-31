@@ -143,6 +143,11 @@ extern int proxy_connect(const struct sockaddr_in* addr);
 extern int create_socket(const struct sockaddr_in* addr, int listen_num);
 
 /**
+ * 创建一个可复用端口的tcp连接
+*/
+extern  int create_reuse_tcp(char *port, void *val, socklen_t len, int listen_num, struct proxy_info* p_info);
+
+/**
  * 将一个网络自己序转换为主机字节序
 */
 extern int proxy_ntos(const struct sockaddr_in* addr, struct proxy_info* info);
@@ -177,4 +182,6 @@ extern int create_tcp(char* port, int listen_num, struct proxy_info* p_info);
 */
 extern int connect_proxy(const struct proxy_info* proxy);
 
+
+extern int reuse_port(const int *fd, const void* val, socklen_t* len);
 #endif

@@ -34,7 +34,7 @@ extern int proxy_add(int efd, int afd, int event, proxy_data* data);
 extern proxy_data* proxy_get(struct epoll_event* event);
 
 /**
- * 设置阻塞
+ * 设置非阻塞
 */
 extern int setnobolck(int fd);
 

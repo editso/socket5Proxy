@@ -1,4 +1,4 @@
-#include <proxy.h>
+#include "proxy.h"
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -49,7 +49,8 @@ int main(int argc, char *argv[]){
         exit(0);
     }
     struct proxy_info s_info;
-    if((listen_fd = create_tcp(argv[1], 100, &s_info)) < 0){
+    int opt = 1;
+    if((listen_fd = create_reuse_tcp(argv[1], (void*)&opt, sizeof(opt), 100,&s_info)) < 0){
         perror("创建失败");
         exit(0);
     }
